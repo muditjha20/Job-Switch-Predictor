@@ -98,7 +98,9 @@ const BASE_URL = "https://talent-predictor-api.onrender.com";
 
 **Mudit Mayank Jha**  
 🎓 Computer Science | University of the West Indies & University of Richmond  
-💼 Aspiring SWE | Interested in AI/ML and backend
+💼 Aspiring SWE | Interested in AI/ML, backend and full-stack  
+
+
 ---
 
 ## ⭐ Show Your Support
