@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job-Switch Predictor | Professional Edition</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --primary-light: #e6f0ff;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSgzMCkiPjxjaXJjbGUgY3g9IjEwIiBjeT0iMTAiIHI9IjEiIGZpbGw9IiM0MzYxZWUiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==');
+            opacity: 0.2; z-index: -1;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        header {
+            text-align: center; margin-bottom: 40px; padding: 20px;
+            background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow);
+            position: relative; overflow: hidden;
+        }
+        header::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        header h1 { font-size: 2.8rem; color: var(--primary); margin-bottom: 8px; font-weight: 700; letter-spacing: -0.5px; }
+        header .subtitle { font-size: 1.1rem; color: var(--gray); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+        .model-version { display: inline-block; background: var(--primary-light); color: var(--primary); padding: 6px 15px; border-radius: 20px; font-size: 0.9rem; margin-top: 15px; font-weight: 600; }
+
+        .content-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 40px; }
+        @media (min-width: 992px) { .content-grid { grid-template-columns: 1.5fr 1fr; } }
+
+        .card { background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 30px; transition: var(--transition); position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); }
+
+        .card-header { display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--light-gray); }
+        .card-header h2 { font-size: 1.6rem; color: var(--dark); font-weight: 600; margin-left: 12px; }
+        .card-header .icon { width: 40px; height: 40px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--dark); font-size: 0.95rem; }
+        .form-group input, .form-group select { width: 100%; padding: 15px; border: 1px solid var(--light-gray); border-radius: 10px; font-size: 1rem; transition: var(--transition); background: #fafbff; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15); }
+        .form-group .error { color: var(--danger); font-size: 0.85rem; margin-top: 8px; min-height: 20px; display: block; }
+        .schema-hint { font-size: 0.85rem; color: var(--gray); margin-top: 8px; font-style: italic; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        button {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white; border: none; padding: 16px 30px; border-radius: 10px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex: 1; min-width: 200px; box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 7px 20px rgba(67, 97, 238, 0.3); }
+        button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: white; color: var(--primary); border: 1px solid var(--light-gray); box-shadow: none; }
+        .btn-secondary:hover { background: var(--primary-light); box-shadow: none; }
+
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .result-content { display: flex; flex-direction: column; gap: 25px; }
+        .verdict-container { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 30px; background: var(--light); border-radius: var(--border-radius); margin-bottom: 20px; }
+        .verdict-badge { padding: 15px 40px; border-radius: 30px; font-weight: 700; font-size: 1.4rem; margin-bottom: 20px; letter-spacing: 0.5px; }
+        .verdict-stay { background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%); color: white; }
+        .verdict-switch { background: linear-gradient(135deg, #f72585 0%, #7209b7 100%); color: white; }
+
+        .probability-container { width: 100%; max-width: 500px; margin: 0 auto; }
+        .probability-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--dark); }
+        .probability-bar { height: 25px; background: var(--light-gray); border-radius: 12px; overflow: hidden; position: relative; }
+        .probability-fill { height: 100%; border-radius: 12px; transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+        .meta-info { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; color: var(--gray); font-size: 0.95rem; margin-top: 15px; }
+        .meta-item { display: flex; align-items: center; gap: 8px; background: var(--light); padding: 8px 15px; border-radius: 8px; }
+
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th, .history-table td { padding: 15px; text-align: left; border-bottom: 1px solid var(--light-gray); }
+        .history-table th { background-color: #f8f9fa; font-weight: 600; color: var(--dark); }
+        .history-table tr:last-child td { border-bottom: none; }
+        .history-badge { padding: 5px 15px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; }
+        .history-switch { background: rgba(247, 37, 133, 0.15); color: #f72585; }
+        .history-stay { background: rgba(76, 201, 240, 0.15); color: #4cc9f0; }
+
+        .notification-area { position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+        .notification { padding: 18px 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); background: white; border-left: 4px solid; animation: fadeIn 0.4s, fadeOut 0.4s 4.6s; display: flex; align-items: center; gap: 15px; }
+        .notification.error { border-color: var(--danger); }
+        .notification.warning { border-color: var(--warning); }
+        .notification.success { border-color: var(--success); }
+        .notification-icon { font-size: 1.4rem; }
+        .notification-content { flex: 1; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        footer { text-align: center; padding: 25px; color: var(--gray); font-size: 0.9rem; margin-top: 30px; }
+        .logo { font-weight: 700; color: var(--primary); font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 10px; }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { min-width: 100%; }
+            .btn-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-area" id="notification-area"></div>
+
+    <div class="container">
+        <header>
+            <h1>Job-Switch Predictor</h1>
+            <p class="subtitle">AI-powered prediction system to determine if a candidate is likely to switch jobs based on career history and demographics</p>
+            <div class="model-version" id="model-version">Model: —</div>
+        </header>
+
+        <div class="content-grid">
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon">📋</div>
+                        <h2>Candidate Information</h2>
+                    </div>
+                    <form id="predict-form">
+                        <div class="form-grid">
+                            <!-- Numeric Inputs -->
+                            <div class="form-group">
+                                <label for="city_development_index">City Development Index</label>
+                                <input type="number" id="city_development_index" step="0.01" min="0" max="1" placeholder="0.00 - 1.00" required>
+                                <span class="error" id="city_development_index-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="experience">Experience (years)</label>
+                                <input type="text" id="experience" placeholder="e.g., 3 or <1 or >20" required>
+                                <span class="error" id="experience-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="last_new_job">Last New Job</label>
+                                <input type="text" id="last_new_job" placeholder="e.g., 1 or never or >4" required>
+                                <span class="error" id="last_new_job-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="training_hours">Training Hours</label>
+                                <input type="number" id="training_hours" min="0" placeholder="e.g., 36" required>
+                                <span class="error" id="training_hours-error"></span>
+                            </div>
+
+                            <!-- Known Categoricals -->
+                            <div class="form-group">
+                                <label for="relevent_experience">Relevant Experience</label>
+                                <select id="relevent_experience" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="Has relevent experience">Has relevant experience</option>
+                                    <option value="No relevent experience">No relevant experience</option>
+                                </select>
+                                <span class="error" id="relevent_experience-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="enrolled_university">University Enrollment</label>
+                                <select id="enrolled_university" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="no_enrollment">No enrollment</option>
+                                    <option value="Full time course">Full time course</option>
+                                    <option value="Part time course">Part time course</option>
+                                </select>
+                                <span class="error" id="enrolled_university-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="education_level">Education Level</label>
+                                <select id="education_level" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="Primary School">Primary School</option>
+                                    <option value="High School">High School</option>
+                                    <option value="Graduate">Graduate</option>
+                                    <option value="Masters">Masters</option>
+                                    <option value="Phd">Phd</option>
+                                </select>
+                                <span class="error" id="education_level-error"></span>
+                            </div>
+
+                            <!-- Schema-dependent Fields (pre-filled with common values) -->
+                            <div class="form-group">
+                                <label for="major_discipline">Major Discipline</label>
+                                <select id="major_discipline" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="STEM">STEM</option>
+                                    <option value="Business Degree">Business Degree</option>
+                                    <option value="Arts">Arts</option>
+                                    <option value="Humanities">Humanities</option>
+                                    <option value="Other">Other</option>
+                                    <option value="No Major">No Major</option>
+                                </select>
+                                <span class="error" id="major_discipline-error"></span>
+                                <p class="schema-hint">Must match training category exactly</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="company_size">Company Size</label>
+                                <select id="company_size" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="&lt;10">&lt;10</option>
+                                    <option value="10/49">10/49</option>
+                                    <option value="50-99">50-99</option>
+                                    <option value="100-500">100-500</option>
+                                    <option value="500-999">500-999</option>
+                                    <option value="1000-4999">1000-4999</option>
+                                    <option value="5000-9999">5000-9999</option>
+                                    <option value="10000+">10000+</option>
+                                </select>
+                                <span class="error" id="company_size-error"></span>
+                                <p class="schema-hint">Must match training category exactly</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="company_type">Company Type</label>
+                                <select id="company_type" required>
+                                    <option value="" disabled selected>Select option</option>
+                                    <option value="Pvt Ltd">Private Limited</option>
+                                    <option value="Funded Startup">Funded Startup</option>
+                                    <option value="Early Stage Startup">Early Stage Startup</option>
+                                    <option value="Public Sector">Public Sector</option>
+                                    <option value="NGO">NGO</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span class="error" id="company_type-error"></span>
+                                <p class="schema-hint">Must match training category exactly</p>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" id="predict-btn">
+                                <span id="btn-text">Predict Job Switch</span>
+                                <span class="spinner" id="btn-spinner" style="display: none;"></span>
+                            </button>
+                            <button type="button" id="demo-btn" class="btn-secondary">Load Demo Data</button>
+                            <button type="button" id="reset-btn" class="btn-secondary">Reset Form</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card" id="result-panel" style="display: none; margin-top: 30px;">
+                    <div class="card-header">
+                        <div class="icon">📊</div>
+                        <h2>Prediction Result</h2>
+                    </div>
+                    <div class="result-content">
+                        <div class="verdict-container">
+                            <div class="verdict-badge" id="verdict-badge">Likely to Stay</div>
+                            <div class="probability-container">
+                                <div class="probability-header">
+                                    <span>Probability of Switching Jobs</span>
+                                    <span id="probability-value">0%</span>
+                                </div>
+                                <div class="probability-bar">
+                                    <div class="probability-fill" id="probability-fill" style="width: 0%; background: linear-gradient(90deg, #4cc9f0, #4361ee);"></div>
+                                </div>
+                            </div>
+                            <div class="meta-info">
+                                <div class="meta-item">
+                                    <span>⏱️</span>
+                                    <span id="latency">Latency: 0ms</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span>🧠</span>
+                                    <span id="result-model-version">Model: unknown</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span>📅</span>
+                                    <span id="timestamp">Just now</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="copy-curl" class="btn-secondary">📋 Copy cURL Command</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon">🕒</div>
+                        <h2>Prediction History</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Verdict</th>
+                                    <th>Probability</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 30px; color: var(--gray);">
+                                        No predictions yet. Submit a form to see history.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="logo">JOB-SWITCH PREDICTOR</div>
+            <p>Professional Edition &copy; 2023 | AI-Powered Career Analytics</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== Config =====
+        const BASE_URL = 'https://talent-predictor-api.onrender.com';
+        const TIMEOUT_DURATION = 12000;
+
+        // ===== DOM =====
+        const form = document.getElementById('predict-form');
+        const predictBtn = document.getElementById('predict-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const resultPanel = document.getElementById('result-panel');
+        const modelVersionEl = document.getElementById('model-version');
+        const historyBody = document.getElementById('history-body');
+        const copyCurlBtn = document.getElementById('copy-curl');
+        const demoBtn = document.getElementById('demo-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const notificationArea = document.getElementById('notification-area');
+
+        let predictionHistory = [];
+
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
+            form.addEventListener('submit', handleFormSubmit);
+            copyCurlBtn.addEventListener('click', handleCopyCurl);
+            demoBtn.addEventListener('click', loadDemoData);
+            resetBtn.addEventListener('click', resetForm);
+            modelVersionEl.textContent = 'Model: —';
+
+            // Optional: augment dropdowns with exact categories from /schema (if available)
+            loadSchema();
+        }
+
+        // ===== Optional schema loader (non-destructive: only appends missing options) =====
+        async function loadSchema() {
+            try {
+                const res = await fetch(`${BASE_URL}/schema`);
+                if (!res.ok) return; // keep current options
+                const schema = await res.json();
+                const cats = schema?.categoricals || {};
+
+                appendMissingOptions('relevent_experience', cats.relevent_experience);
+                appendMissingOptions('enrolled_university', cats.enrolled_university);
+                appendMissingOptions('education_level', cats.education_level);
+                appendMissingOptions('major_discipline', cats.major_discipline);
+                appendMissingOptions('company_size', cats.company_size);
+                appendMissingOptions('company_type', cats.company_type);
+            } catch (_) {
+                // ignore; UI remains as-is
+            }
+        }
+        function appendMissingOptions(selectId, list) {
+            if (!Array.isArray(list)) return;
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const existing = new Set([...sel.options].map(o => o.value));
+            list.forEach(v => {
+                if (!existing.has(v)) {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sel.appendChild(opt);
+                }
+            });
+        }
+
+        // Demo data
+        function loadDemoData() {
+            document.getElementById('city_development_index').value = '0.92';
+            document.getElementById('relevent_experience').value = 'No relevent experience';
+            document.getElementById('enrolled_university').value = 'no_enrollment';
+            document.getElementById('education_level').value = 'Masters';
+            document.getElementById('major_discipline').value = 'STEM';
+            document.getElementById('experience').value = '3';
+            document.getElementById('company_size').value = '1000-4999';
+            document.getElementById('company_type').value = 'Pvt Ltd';
+            document.getElementById('last_new_job').value = '1';
+            document.getElementById('training_hours').value = '36';
+            showNotification('Demo data loaded successfully!', 'success');
+        }
+
+        function resetForm() {
+            form.reset();
+            clearFormErrors();
+            showNotification('Form has been reset', 'success');
+        }
+
+        // ===== Submit handler (real backend call) =====
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            predictBtn.disabled = true;
+            btnText.textContent = 'Predicting...';
+            btnSpinner.style.display = 'inline-block';
+
+            try {
+                const payload = collectPayload();
+                const clientErrors = validateClientSide(payload);
+                if (Object.keys(clientErrors).length > 0) {
+                    showFormErrors(clientErrors);
+                    return;
+                }
+
+                clearFormErrors();
+
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
+                const res = await fetch(`${BASE_URL}/predict_raw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timer);
+
+                let data = {};
+                try { data = await res.json(); } catch (_) {}
+
+                if (!res.ok) {
+                    if (res.status === 400 && data.error === 'validation_error' && data.details) {
+                        showFormErrors(data.details);
+                        throw new Error('Validation error');
+                    }
+                    throw new Error(data.message || `HTTP ${res.status}`);
+                }
+
+                renderResult(data);
+                pushHistory(data);
+                renderHistory();
+
+                modelVersionEl.textContent = `Model: ${data.model_version}`;
+                resultPanel.style.display = 'block';
+
+                // Store request payload for Copy cURL
+                copyCurlBtn.dataset.payload = JSON.stringify(payload);
+
+                showNotification('Prediction completed successfully!', 'success');
+            } catch (error) {
+                showNotification(error.message || 'Request failed', 'error');
+            } finally {
+                predictBtn.disabled = false;
+                btnText.textContent = 'Predict Job Switch';
+                btnSpinner.style.display = 'none';
+            }
+        }
+
+        function collectPayload() {
+            return {
+                city_development_index: parseFloat(document.getElementById('city_development_index').value),
+                relevent_experience: document.getElementById('relevent_experience').value,
+                enrolled_university: document.getElementById('enrolled_university').value,
+                education_level: document.getElementById('education_level').value,
+                major_discipline: document.getElementById('major_discipline').value,
+                experience: document.getElementById('experience').value,
+                company_size: document.getElementById('company_size').value,
+                company_type: document.getElementById('company_type').value,
+                last_new_job: document.getElementById('last_new_job').value,
+                training_hours: parseInt(document.getElementById('training_hours').value, 10)
+            };
+        }
+
+        function validateClientSide(p) {
+            const errors = {};
+            if (Number.isNaN(p.city_development_index)) {
+                errors.city_development_index = 'Please enter a valid number';
+            } else if (p.city_development_index < 0 || p.city_development_index > 1) {
+                errors.city_development_index = 'Must be between 0 and 1';
+            }
+            if (Number.isNaN(p.training_hours)) {
+                errors.training_hours = 'Please enter a valid number';
+            } else if (p.training_hours < 0) {
+                errors.training_hours = 'Must be 0 or higher';
+            }
+            if (!p.experience) errors.experience = 'Experience is required';
+            if (!p.last_new_job) errors.last_new_job = 'This field is required';
+
+            // Ensure all required selects have values
+            ['relevent_experience','enrolled_university','education_level','major_discipline','company_size','company_type']
+              .forEach(k => { if (!p[k]) errors[k] = 'Please select an option'; });
+
+            return errors;
+        }
+
+        function showFormErrors(errors) {
+            for (const [field, message] of Object.entries(errors)) {
+                const el = document.getElementById(`${field}-error`);
+                if (el) el.textContent = String(message);
+            }
+        }
+        function clearFormErrors() { document.querySelectorAll('.error').forEach(el => el.textContent = ''); }
+
+        // ===== Result & History =====
+        function renderResult(r) {
+            const verdictBadge = document.getElementById('verdict-badge');
+            const pct = Math.round(((r.probability ?? 0) * 100));
+
+            if (r.prediction === 1) {
+                verdictBadge.textContent = 'Likely to Switch';
+                verdictBadge.className = 'verdict-badge verdict-switch';
+                document.getElementById('probability-fill').style.background = 'linear-gradient(90deg, #f72585, #7209b7)';
+            } else {
+                verdictBadge.textContent = 'Likely to Stay';
+                verdictBadge.className = 'verdict-badge verdict-stay';
+                document.getElementById('probability-fill').style.background = 'linear-gradient(90deg, #4cc9f0, #4361ee)';
+            }
+
+            document.getElementById('probability-value').textContent = `${pct}%`;
+            setTimeout(() => { document.getElementById('probability-fill').style.width = `${pct}%`; }, 100);
+
+            document.getElementById('latency').textContent = `Latency: ${r.latency_ms ?? 0}ms`;
+            document.getElementById('result-model-version').textContent = `Model: ${r.model_version ?? 'unknown'}`;
+            document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
+        }
+
+        function pushHistory(entry) {
+            const historyEntry = { ...entry, timestamp: new Date().toLocaleTimeString() };
+            predictionHistory.unshift(historyEntry);
+            if (predictionHistory.length > 10) predictionHistory.pop();
+        }
+
+        function renderHistory() {
+            historyBody.innerHTML = '';
+            if (predictionHistory.length === 0) {
+                historyBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 30px; color: var(--gray);">
+                            No predictions yet. Submit a form to see history.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            predictionHistory.forEach(e => {
+                const pct = Math.round(((e.probability ?? 0) * 100));
+                const verdict = e.prediction === 1 ? 'Switch' : 'Stay';
+                const klass = e.prediction === 1 ? 'history-switch' : 'history-stay';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${e.timestamp}</td>
+                    <td><span class="history-badge ${klass}">${verdict}</span></td>
+                    <td>${pct}%</td>
+                `;
+                historyBody.appendChild(row);
+            });
+        }
+
+        // ===== Copy cURL =====
+        function handleCopyCurl() {
+            try {
+                const payload = copyCurlBtn.dataset.payload
+                  ? JSON.parse(copyCurlBtn.dataset.payload)
+                  : collectPayload();
+                const escaped = JSON.stringify(payload).replace(/'/g, "\\'");
+                const curl = `curl -X POST "${BASE_URL}/predict_raw" -H "Content-Type: application/json" -d '${escaped}'`;
+                navigator.clipboard.writeText(curl)
+                  .then(() => showNotification('cURL command copied to clipboard!', 'success'))
+                  .catch(() => showNotification('Failed to copy cURL', 'error'));
+            } catch {
+                showNotification('Failed to generate cURL command', 'error');
+            }
+        }
+
+        // ===== Notifications =====
+        function showNotification(message, type = 'info') {
+            const n = document.createElement('div');
+            n.className = `notification ${type}`;
+            let icon = 'ℹ️'; if (type === 'error') icon = '❌'; if (type === 'success') icon = '✅'; if (type === 'warning') icon = '⚠️';
+            n.innerHTML = `<div class="notification-icon">${icon}</div><div class="notification-content">${message}</div>`;
+            notificationArea.appendChild(n);
+            setTimeout(() => n.remove(), 5000);
+        }
+    </script>
+</body>
+</html>
